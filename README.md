@@ -6,9 +6,9 @@ convection and the evolution of precipitation using simulations and
 polarimetric radar observations at C- and Ka-band" (IcePolCKa). In this
 project, polarimetric radar observations are used to evaluate weather
 simulations using varying cloud microphysics schemes. A corresponding
-publication is to be submitted under the name: 'Convective cloud microphysics
+publication is to be submitted under the name: "Convective cloud microphysics
 in dual-wavelength polarimetric radar observations and numerical weather model:
-methods and examples.
+methods and examples".
 
 
 ## Structure
