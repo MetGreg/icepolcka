@@ -1,0 +1,179 @@
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Paths
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# General data paths
+data:
+    WRF: /project/meteo/work//Gregor.Koecher/icepolcka/data/wrf/
+    CRSIMOut: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/crsim_out/
+    CRSIM: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/crsim/
+    RFOut: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/rf_out/
+    RF: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/rf/
+    DWD: /archive/meteo/external-obs/dwd/radar/c_band_isen_20190401-20201031/extracted/
+    RG: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/rg/
+    TRACKS: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/tracks/
+    MIRA: /project/meteo/data/miraMACS/mom/
+    POLDI: /project/meteo/data/poldirad/
+
+# Data base SQL files
+database:
+    WRF: /home/g/Gregor.Koecher/icepolcka/data/wrf.db
+    CRSIM: /home/g/Gregor.Koecher/icepolcka/data/crsim.db
+    RF: /home/g/Gregor.Koecher/icepolcka/data/rf.db
+    DWD: /home/g/Gregor.Koecher/icepolcka/data/dwd.db
+    RG: /home/g/Gregor.Koecher/icepolcka/data/rg.db
+    MIRA: /home/g/Gregor.Koecher/icepolcka/data/mira.db
+    POLDI: /home/g/Gregor.Koecher/icepolcka/data/poldi_new.db
+    TRACKS: /home/g/Gregor.Koecher/icepolcka/data/tracks.db
+
+# Output paths
+output:
+    CFADs: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/cfads/
+    DOMAIN: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/setup.png
+    TRACKS: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/tracks/
+    HIST: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/histograms/
+    PRECIP: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/precip/
+
+# Logbook paths
+logbooks:
+    Coordinated_RHI: /home/g/Gregor.Koecher/icepolcka/logs/coordinated_rhi/
+
+# Path to data masks (Distance and Height mask)
+masks:
+    Distance: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/masks/distance_mask.npy
+    Height: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/masks/height
+
+# Precalculated matrix for locations of radar intersection
+matrix:
+    Intersection: /project/meteo/work/Gregor.Koecher/icepolcka/method_paper/matrix/intersection.npy
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Script settings
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Config for the CR-SIM simulation script
+crsim:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_crsim/
+    exe: /project/meteo/work/met-wrf-chem/crsim-3.33/bin/crsim
+    params: /project/meteo/work/Gregor.Koecher/icepolcka/crsim/parameters/
+
+# Config for the shrink data script
+shrink:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_shrink/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/shrink_data.py
+    
+# Config for the radar filter script
+rf:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_rf/
+    folder: /project/meteo/work/met-wrf-chem/radar_filter_v1.2.1/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/rf.py
+
+# Config for the RegularGrid interpolation script
+rg:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_rg/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/rg.py
+    
+
+# !!!!!!!!!!!!!!!!!!!!G!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Grids 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Spherical radar grid definition
+sphere:
+    Isen:
+        max_range: 144000 
+        range_res: 250
+        min_az: 0
+        max_az: 360
+        elevs: [0.5, 0.8, 1.5, 2.5, 3.5, 4.5, 5.5, 8, 12, 17, 25]
+    Poldirad:
+        max_range: 48000
+        range_res: 150
+        min_az: 5
+        max_az: 141
+        elevs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
+    Mira35:
+        max_range: 24000 
+        range_res: 31.18
+        min_az: 0
+        max_az: 360 
+        elevs: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90]
+
+# Cartesian Grid settings
+cart_grid:
+    z_max: 15000 # Maximum height [m] of Cartesian grid.
+    z_min: -100  # Maximum height [m] of Cartesian grid.
+    vert_res: 100  # Vertical resolution [m] of Cartesian grid.
+
+# Height steps from a MP8 simulation at 01.07.2019 12 UTC, rounded to 100 m.
+WRFGrid: [0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.7, 2.1, 2.4, 2.9, 3.3, 3.9, 4.4, 5, 5.7, 6.4, 7.1, 7.9, 8.7, 9.4, 10.1, 10.8, 11.5, 12.2, 12.9, 13.6, 14.2, 14.9]
+max_r: 24000  # Maximum range [m] towards center (Mira-35) to be considered.
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Tracking
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TINT tracking configuration
+tracking:
+    FIELD_THRESH: 32
+    MIN_SIZE: 8
+    SEARCH_MARGIN: 4000
+    FLOW_MARGIN: 10000
+    MAX_FLOW_MAG: 50
+    MAX_DISPARITY: 999
+    MAX_SHIFT_DISP: 15
+    ISO_THRESH: 8
+    ISO_SMOOTH: 3
+    GS_ALT: 1500
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Plotting
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Bins for CFAD plots
+bins:
+    Zhh: [-30, 60, 5]
+    Zhh_corr: [-30, 60, 5]
+    Zdr: [-1, 4, 0.2]
+    Zdr_corr: [-1, 4, 0.2]
+    DWR: [-5, 25, 1]
+    DWR_corr: [-5, 25, 1]
+
+# Extent of map that is shown (lon_min, lon_max, lat_min, lat_max)
+extent:
+    Munich: [10.53, 12.65, 47.43, 48.85]
+    Domain: [9.5, 14.5, 46.6, 49.7]
+    Inset: [11.22, 11.93, 47.94, 48.44]
+
+# Legend names
+legend:
+    8: Thompson 2-mom
+    28: Thompson aerosol-aware
+    10: Morrison 2-mom
+    30: Spectral Bin
+    50: P3
+    DWD: Observation
+    Obs: Observation
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Constants 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Radar site coordinates (lon, lat, alt)
+sites:
+    Mira35: [11.573396, 48.17845, 541]
+    Poldirad: [11.278898, 48.086759, 603]
+    Isen: [12.101779, 48.17405, 678]
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# General Configs 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+start: '07.07.2019 00:00:00' # Starting date (dd.mm.yyyy HH:MM:SS)
+end: '07.07.2019 23:59:59' # Ending date (dd.mm.yyyy HH:MM:SS)
+date: '07.07.2019' # Date of interest (dd.mm.yyyy) 
+radar: Isen  # Radar name 
+mp: 8  # WRF ID of microphysics scheme
+source: MODEL  # Whether DWD or MODEL data input
+update: False  # Whether to update the data base with new files
+recheck: False  # Whether to recheck existing files on changes 
+exe: /home/g/Gregor.Koecher/.conda/envs/ice/bin/python
