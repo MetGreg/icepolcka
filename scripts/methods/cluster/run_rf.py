@@ -229,9 +229,9 @@ $EXE $SCRIPT
     return batch_file
 
 
-def main():
+def main(cfg_file):
     print("Starting Main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     handles = get_crsim_data(cfg['data']['CRSIM'], cfg['database']['CRSIM'],
                              cfg['update'], cfg['recheck'], cfg['start'],
                              cfg['end'], cfg['mp'], cfg['radar'])
@@ -250,4 +250,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

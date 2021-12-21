@@ -44,13 +44,15 @@ def get_hms(mp):
     """
     print("Getting hydrometeor names")
     if mp == 50:
-        hms = ["all", "parimedice", "rain", "smallice", "unrimedice", "graupel"]
+        hms = ["all", "parimedice", "rain", "smallice", "unrimedice",
+        "graupel", "cloud"]
     else:
         hms = ["all", "cloud", "ice", "graupel", "rain", "snow"]
     return hms
 
 
-def create_batch_script(start, end, mp, radar, hm, workdir, exe, script):
+def create_batch_script(start, end, mp, radar, hm, workdir, exe, script,
+                        cfg_file):
     """Prepare batch script
 
     Prepares the batch script that is used to send a job to the cluster.
@@ -66,6 +68,7 @@ def create_batch_script(start, end, mp, radar, hm, workdir, exe, script):
         exe (str): Path to the python executable
         script (str): Script that will be executed on cluster. This is a
             python script that actually shrinks the data.
+        cfg_file (str): Path to configuration file.
 
     Returns:
         str:
@@ -106,15 +109,16 @@ END={}
 MP={}
 RADAR={}
 HM={}
+CFG={}
 
-$EXE $SCRIPT $START $END $MP $RADAR $HM 
+$EXE $SCRIPT $START $END $MP $RADAR $HM $CFG
         '''.format(log_file, job_name, job_folder, exe, script, start_str,
-                   end_str, mp, radar, hm))
+                   end_str, mp, radar, hm, cfg_file))
     return batch_file
 
 
-def main():
-    cfg = load_config()
+def main(cfg_file):
+    cfg = load_config(cfg_file)
     assert cfg['start'].date() == cfg['end'].date(), "Only daily scripts " \
                                                      "allowed"
 
@@ -125,9 +129,10 @@ def main():
         batch_script = create_batch_script(cfg['start'], cfg['end'], cfg['mp'],
                                            cfg['radar'], hm,
                                            cfg['shrink']['workdir'], cfg['exe'],
-                                           cfg['shrink']['script'])
+                                           cfg['shrink']['script'], cfg_file)
         subprocess.Popen(["sbatch", batch_script])
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

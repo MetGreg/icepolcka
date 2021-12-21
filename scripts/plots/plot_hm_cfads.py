@@ -14,27 +14,27 @@ import matplotlib.colors as mcolors
 from icepolcka_utils.utils import load_config, make_folder
 
 
-SRC = [8, 28, 10, 30, 50, "Obs"]
-VARIABLES = ["Zhh", "Zhh_corr", "DWR_corr", "DWR", "Zdr", "Zdr_corr", "Kdp"]
+#SRC = [8, 28, 10, 30]
+SRC = [8, 28, 10, 30, 50]
+#SRC = [50, 50, 50, 50, 50, 50]
+VARIABLES = ["Zhh", "DWR", "Zdr", "Kdp", "Adp", "Ah"]
 PLOT_LABELS = {
     'Zhh': "Reflectivity (dBZ)",
-    'Zhh_corr': "Attenuated reflectivity (dBZ)",
     'Zdr': "Differential reflectivity (dB)",
-    'Zdr_corr': "Attenuated differential reflectivity (dB)",
     'DWR': "Dual-wavelength ratio (dB)",
-    'DWR_corr': "Dual-wavelength ratio (dB) from attenuated signals",
     'Kdp': "Specific differential phase (° km-1)",
+    'Adp': "Specific differential attenuation (dB/km)",
+    'Ah': "Attenuation (dB/km)"
     }
 
 # Colorbar limits
 VLIMS = {
     'Zhh': (10**-3, 3*10**(-1)),
-    'Zhh_corr': (10**-3, 3*10**(-1)),
     'Zdr': (10**(-4), 3*10**(-1)),
-    'Zdr_corr': (10**(-4), 3*10**(-1)),
     'DWR': (10**-2, 10**(-1)),
-    'DWR_corr': (10**-2, 10**(-1)),
     'Kdp': (10**(-4), 10**(-1)),
+    'Adp': (10**(-4), 10**(-1)),
+    'Ah': (10**(-4), 10**(-1)),
     }
 
 # Annotation locations
@@ -69,16 +69,21 @@ def create_subplots():
 
     """
     fig = plt.figure(figsize=(8, 5))
-    ax = fig.add_subplot(111)
-    ax.spines['top'].set_color('none')
-    ax.spines['bottom'].set_color('none')
-    ax.spines['left'].set_color('none')
-    ax.spines['right'].set_color('none')
-    ax.tick_params(labelcolor='w', top=False, bottom=False, left=False,
-                   right=False)
     gs = fig.add_gridspec(2, 3, hspace=0.1, wspace=0.1)
-    axs = gs.subplots(sharex="col", sharey="row")
-    return fig, axs, ax
+    #axs = gs.subplots(sharex="col", sharey="row")
+    ax1 = plt.subplot(gs[0, 0])
+    ax2 = plt.subplot(gs[0, 1])
+    ax3 = plt.subplot(gs[0, 2])
+    ax4 = plt.subplot(gs[1, 0])
+    ax5 = plt.subplot(gs[1, 1])
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    plt.setp(ax2.get_xticklabels(), visible=False)
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    plt.setp(ax5.get_yticklabels(), visible=False)
+    axs = np.array([ax1, ax2, ax3, ax4, ax5])
+    #axs = np.array([ax1, ax2, ax3, ax4])
+    return fig, axs
 
 
 def get_bins(bin_limits):
@@ -101,31 +106,7 @@ def get_bins(bin_limits):
     return bins
 
 
-def get_var_key(var):
-    """Get variable key
-
-    The radar is always automatically attenuated. When a variable with
-    attenuation applied is wanted for the radar, return the standard
-    variable.
-
-    Args:
-        var (str): Variable name.
-
-    Returns:
-        str:
-            Data key corresponding to variable name.
-
-    """
-    if var == "Zhh_corr":
-        var = "Zhh"
-    elif var == "DWR_corr":
-        var = "DWR"
-    elif var == "Zdr_corr":
-        var = "Zdr"
-    return var
-
-
-def get_cfad_data(src, cfad_path, radar, var):
+def get_cfad_data(src, cfad_path, radar, var, hm):
     """Get cfad data
 
     Gets the CFAD data path, depending on the data source, radar and variable
@@ -143,13 +124,8 @@ def get_cfad_data(src, cfad_path, radar, var):
             Loaded CFAD data.
 
     """
-    if src != "Obs":
-        data_path = cfad_path + os.sep + "model" + os.sep + "MP" + str(src) \
-            + os.sep + radar + os.sep + str(var) + ".npy"
-    else:
-        var = get_var_key(var)
-        data_path = cfad_path + os.sep + "radar" + os.sep + radar + os.sep \
-            + str(var) + ".npy"
+    data_path = cfad_path + os.sep + "HM" + os.sep + "MP" + str(src) + os.sep + radar + os.sep \
+        + str(var) + "_" + hm + ".npy"
     data = np.load(data_path)
     return data
 
@@ -201,7 +177,7 @@ def plot_subplot(ax, data, heights, bins, vmin, vmax):
     return img
 
 
-def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax):
+def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax, hm):
     """Plot all subplots
 
     Plots a CFAD for each of the subplots.
@@ -225,7 +201,7 @@ def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax):
     i = 0
     for axi in axs.ravel():
         src = sources[i]
-        data = get_cfad_data(src, data_path, radar, var)
+        data = get_cfad_data(src, data_path, radar, var, hm)
         img = plot_subplot(axi, data, HEIGHTS, bins, vmin=vmin, vmax=vmax)
         i += 1
     return img
@@ -248,15 +224,13 @@ def annotate(sources, fig, loc, legend):
         fig.text(loc[src][0], loc[src][1], legend[src])
 
 
-def finish_plot(fig, ax, img, label, filename):
+def finish_plot(fig, img, label, filename):
     """Last plot settings
 
     Labels and saves the plot.
 
     Args:
         fig (matplotlib.figure.Figure): Figure with the image.
-        ax (matplotlib.axes._subplots.AxesSubplot): Matplotlib axis with the
-            image.
         img (matplotlib.collections.QuadMesh): Image containing a CFAD.
         label (str): Label of x_axis.
         filename (str): Output file name.
@@ -265,8 +239,8 @@ def finish_plot(fig, ax, img, label, filename):
     fig.subplots_adjust(right=0.8)
     cbar_ax = fig.add_axes([0.82, 0.15, 0.02, 0.7])
     fig.colorbar(img, cax=cbar_ax, label="Relative frequency", extend="max")
-    ax.set_xlabel(label)
-    ax.set_ylabel("Height above NN (km)")
+    fig.text(0.06, 0.3, 'Height above NN (km)', rotation=90, fontsize=10)
+    fig.text(0.37, 0.03, label, fontsize=10)
     plt.savefig(filename, bbox_inches="tight")
     plt.close()
 
@@ -274,17 +248,22 @@ def finish_plot(fig, ax, img, label, filename):
 def main(cfg_file):
     print("Starting main")
     cfg = load_config(cfg_file)
+    hms = ["all", "rain", "graupel"]
+    #hms = ["snow", "ice", "cloud"]
+    #hms = ["unrimedice", "parimedice", "smallice"]
     for var in VARIABLES:
         print(var)
         bins = get_bins(cfg['bins'][var])
-        for radar in ["Mira35", "Poldirad"]:
-            filename = make_folder(cfg['output']['CFADs'] + os.sep + "plots",
-                                   radar=radar) + var + ".png"
-            fig, axs, ax = create_subplots()
-            img = plot_subplots(axs, SRC, cfg['output']['CFADs'], radar, var,
-                                bins, VLIMS[var][0], VLIMS[var][1])
-            annotate(SRC, fig, LOCS, cfg['legend'])
-            finish_plot(fig, ax, img, PLOT_LABELS[var], filename)
+        for radar in ["Mira35", "Poldirad", "Isen"]:
+            for hm in hms:
+                filename = make_folder(cfg['output']['CFADs'] + os.sep + "plots"
+                                       + os.sep + "hm" + os.sep + hm + os.sep,
+                                       radar=radar) + var + ".png"
+                fig, axs = create_subplots()
+                img = plot_subplots(axs, SRC, cfg['output']['CFADs'], radar,
+                                    var, bins, VLIMS[var][0], VLIMS[var][1], hm)
+                annotate(SRC, fig, LOCS, cfg['legend'])
+                finish_plot(fig, img, PLOT_LABELS[var], filename)
 
 
 if __name__ == "__main__":

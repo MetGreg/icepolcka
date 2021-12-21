@@ -256,6 +256,8 @@ def get_var_key(var):
         var_data = "reflectivity"
     elif var == "Zdr":
         var_data = "zdr"
+    elif var == "Kdp":
+        var_data = "kdp"
     else:
         var_data = var
     return var_data
@@ -294,15 +296,15 @@ def calc_hist(bin_limits, var, heights, poldi_int, mira_int, poldi_stacked,
     bins = np.arange(xmin, xmax + steps, steps)
     for i in range(len(heights)):
         poldi_hist = np.histogram(poldi_int[i], bins=bins)[0]
-        if var not in ["zdr"]:
+        if var not in ["zdr", "kdp"]:
             mira_hist = np.histogram(mira_int[i], bins=bins)[0]
         if poldi_stacked[var][i] is None:
             poldi_stacked[var][i] = poldi_hist
-            if var not in ["zdr"]:
+            if var not in ["zdr", "kdp"]:
                 mira_stacked[var][i] = mira_hist
         else:
             poldi_stacked[var][i] += poldi_hist
-            if var not in ["zdr"]:
+            if var not in ["zdr", "kdp"]:
                 mira_stacked[var][i] += mira_hist
     return poldi_stacked, mira_stacked
 
@@ -389,17 +391,17 @@ def get_cfads(variables, heights, dates, poldi_db, mira_db, matrix, bins, log):
 
                     itp_mira, itp_poldi = None, None
                     for var in variables:
-                        if var in ["Zhh_corr", "DWR_corr", "Zdr_corr"]:
-                            continue
                         var_key = get_var_key(var)
 
                         # Interpolate data to 3D grid
+                        if var == "Zdr":
+                            poldi_rhi['zdr'].values -= 0.15
                         poldi_data = poldi_rhi[var_key].values[mask]
                         poldi_int, itp_poldi = data_to_cart(
                             poldi_data.ravel(), poldi_src, trg_grid,
                             itp=itp_poldi
                             )
-                        if var_key not in ["zdr"]:
+                        if var_key not in ["zdr", "kdp"]:
                             mira_int, itp_mira = data_to_cart(
                                 mira_rhi[var_key].values.ravel(),
                                 mira_src, trg_grid, itp=itp_mira
@@ -455,14 +457,14 @@ def save(output, variables, poldi, mira):
     make_folders(output)
     for var in variables:
         np.save(poldi_output + var, np.array(poldi[var]))
-        if var not in ["zdr"]:
+        if var not in ["zdr", "kdp"]:
             np.save(mira_output + var, np.array(mira[var]))
 
 
-def main():
-    cfg = load_config()
+def main(cfg_file):
+    cfg = load_config(cfg_file)
     matrix = np.load(cfg['matrix']['Intersection'], allow_pickle=True)
-    variables = list(cfg['bins'].keys())
+    variables = ["Zhh", "Zdr", "DWR", "Kdp"]
     heights = np.array(cfg['WRFGrid'])*1000  # WRFGrid config in [km]
 
     with MiraDataBase(cfg['data']['MIRA'], cfg['database']['MIRA'],
@@ -479,4 +481,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

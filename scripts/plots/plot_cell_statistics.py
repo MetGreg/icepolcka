@@ -270,7 +270,6 @@ def plot_hist(variables, ax_dict, plot_cfg, var_container, label, col):
         ax.set_xlabel(var_cfg['xlabel'])
         ax.set_xticks(centers)
         ax.set_xlim(xlim)
-        print(ylim)
         ax.set_ylim(ylim)
         ax.plot(centers, hist, "o-", label=label, color=col)
         ax.set_ylabel("Absolute frequency")
@@ -293,9 +292,9 @@ def save_plot(ax_dict, output):
         fig.savefig(output + str(var) + ".png")
 
 
-def main():
+def main(cfg_file):
     print("Starting main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     ax_dict = init_plots(VARIABLES)
     colors = get_colors()
     with TracksDataBase(cfg['data']['TRACKS'], cfg['database']['TRACKS'],
@@ -310,4 +309,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

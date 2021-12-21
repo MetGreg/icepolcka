@@ -166,7 +166,7 @@ def set_cluster_res(mp, handle_dict, model_time):
     # Set resources for P3 scheme
     elif mp == 50:
         threads = 1  # P3 only works with threads = 1
-        time = "66:00:00"
+        time = "40:00:00"
         ram = "8G"
     else:
         raise AssertionError("MP scheme ID not known. Possible are: 8, 10, "
@@ -175,9 +175,9 @@ def set_cluster_res(mp, handle_dict, model_time):
     return threads, time, ram, wrfinput
 
 
-def main():
+def main(cfg_file):
     print("Starting main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     handles = get_handles(cfg['data']['WRF'], cfg['database']['WRF'],
                           cfg['update'], cfg['recheck'], cfg['start'],
                           cfg['end'], cfg['mp'])
@@ -208,4 +208,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

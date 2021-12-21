@@ -150,8 +150,8 @@ def save(tracks, date, source, mp, radar, output):
     ds.close()
 
 
-def main():
-    cfg = load_config()
+def main(cfg_file):
+    cfg = load_config(cfg_file)
     mp, radar = get_data_base(cfg)
     mask = np.load(cfg['masks']['Height'] + os.sep + radar + ".npy")
     start = dt.datetime(cfg['date'].year, cfg['date'].month, cfg['date'].day, 0,
@@ -171,4 +171,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

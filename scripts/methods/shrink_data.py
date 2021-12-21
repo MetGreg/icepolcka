@@ -183,9 +183,9 @@ def save(ds, time, mp, radar, hm, output):
     ds.to_netcdf(output, encoding=encoding)
 
 
-def main(start, end, mp, radar, hm):
+def main(start, end, mp, radar, hm, cfg_file):
     print("Starting main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     start = dt.datetime.strptime(start, "%Y-%m-%d_%H%M%S")
     end = dt.datetime.strptime(end, "%Y-%m-%d_%H%M%S")
     mask = np.load(cfg['masks']['Distance'])
@@ -221,4 +221,5 @@ if __name__ == "__main__":
     mp_id = sys.argv[3]
     radar_name = sys.argv[4]
     hm_name = sys.argv[5]
-    main(start_time, end_time, mp_id, radar_name, hm_name)
+    config_file = sys.argv[6]
+    main(start_time, end_time, mp_id, radar_name, hm_name, config_file)

@@ -27,6 +27,7 @@ PERIODS = [
     [dt.datetime(2019, 7, 7, 9, 20), dt.datetime(2019, 7, 7, 15, 10)],
     [dt.datetime(2019, 7, 8, 9), dt.datetime(2019, 7, 8, 14)]
     ]
+CENTER = False
 
 
 def get_tracks(path, db, update, recheck, start, end, mp):
@@ -327,10 +328,21 @@ def get_cfads(tracks, rg_data, variables, heights, sites, max_range,
                 # Calculate histograms for each variable at each height
                 for var in variables:
                     var_key = get_var_key(var)
-                    poldi_masked = mask_data(poldi_data[var_key], cell_mask,
-                                             poldi_mask)
-                    mira_masked = mask_data(mira_data[var_key], cell_mask,
-                                            mira_mask)
+
+                    if CENTER:
+                        poldi_masked = poldi_data[var_key].copy()
+                        poldi_masked[:] = np.nan
+                        mira_masked = mira_data[var_key].copy()
+                        mira_masked[:] = np.nan
+                        x = int(np.round(cell_df['grid_x']))
+                        y = int(np.round(cell_df['grid_y']))
+                        poldi_masked[:, y, x] = poldi_data[var_key][:, y, x]
+                        mira_masked[:, y, x] = mira_data[var_key][:, y, x]
+                    else:
+                        poldi_masked = mask_data(poldi_data[var_key], cell_mask,
+                                                 poldi_mask)
+                        mira_masked = mask_data(mira_data[var_key], cell_mask,
+                                                mira_mask)
                     if var == "DWR" or var == "DWR_corr":
                         poldi_masked = poldi_masked - mira_masked
                         mira_masked = poldi_masked
@@ -367,12 +379,12 @@ def save(output, mp, variables, poldi, mira):
         np.save(mira_output + var, np.array(mira[var]))
 
 
-def main():
+def main(cfg_file):
     print("Starting main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     mira_mask = np.load(cfg['masks']['Height'] + os.sep + "Mira35.npy")
     poldi_mask = np.load(cfg['masks']['Height'] + os.sep + "Poldirad.npy")
-    variables = list(cfg['bins'].keys())
+    variables = ["Zhh", "Zhh_corr", "Zdr", "Zdr_corr", "DWR", "DWR_corr", "Kdp"]
     heights = np.array(cfg['WRFGrid'])*1000  # WRFGrid config in [km]
     tracks = get_tracks(cfg['data']['TRACKS'], cfg['database']['TRACKS'],
                         cfg['update'], cfg['recheck'], cfg['start'], cfg['end'],
@@ -387,4 +399,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

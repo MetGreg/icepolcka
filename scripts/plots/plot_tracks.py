@@ -147,12 +147,12 @@ def plot_euler_tracks(tracks_obj, grids, extent, output):
     cmap = get_precip_cmap()
     levels = np.arange(0, 51, 2)
     cities = ["München", "Augsburg"]
-    plot_tracks(tracks_obj, grids, extent, levels, cities, output, cmap=cmap)
+    plot_tracks(tracks_obj, grids, extent, levels, cities, output, cmap=cmap, cell_text=True)
 
 
-def main():
+def main(cfg_file):
     print("Starting main")
-    cfg = load_config()
+    cfg = load_config(cfg_file)
     start = cfg['start'].replace(tzinfo=pytz.utc)
     end = cfg['end'].replace(tzinfo=pytz.utc)
     mp, radar = get_data_base(cfg)
@@ -171,4 +171,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)

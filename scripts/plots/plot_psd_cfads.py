@@ -14,27 +14,15 @@ import matplotlib.colors as mcolors
 from icepolcka_utils.utils import load_config, make_folder
 
 
-SRC = [8, 28, 10, 30, 50, "Obs"]
-VARIABLES = ["Zhh", "Zhh_corr", "DWR_corr", "DWR", "Zdr", "Zdr_corr", "Kdp"]
+SRC = [8, 28, 10, 30, 50, 8]
+VARIABLES = ["PSD"]
 PLOT_LABELS = {
-    'Zhh': "Reflectivity (dBZ)",
-    'Zhh_corr': "Attenuated reflectivity (dBZ)",
-    'Zdr': "Differential reflectivity (dB)",
-    'Zdr_corr': "Attenuated differential reflectivity (dB)",
-    'DWR': "Dual-wavelength ratio (dB)",
-    'DWR_corr': "Dual-wavelength ratio (dB) from attenuated signals",
-    'Kdp': "Specific differential phase (° km-1)",
+    'PSD': "Drop diameter (mm)",
     }
 
 # Colorbar limits
 VLIMS = {
-    'Zhh': (10**-3, 3*10**(-1)),
-    'Zhh_corr': (10**-3, 3*10**(-1)),
-    'Zdr': (10**(-4), 3*10**(-1)),
-    'Zdr_corr': (10**(-4), 3*10**(-1)),
-    'DWR': (10**-2, 10**(-1)),
-    'DWR_corr': (10**-2, 10**(-1)),
-    'Kdp': (10**(-4), 10**(-1)),
+    'PSD': (10**-3, 3*10**(-1)),
     }
 
 # Annotation locations
@@ -44,7 +32,6 @@ LOCS = {
     10: (0.59, 0.883),
     30: (0.125, 0.48),
     50: (0.36, 0.48),
-    "Obs": (0.59, 0.48),
     }
 
 # These heights are WRF heights from the MP8 simulation at 01.07.2019 12 UTC
@@ -52,6 +39,8 @@ LOCS = {
 HEIGHTS = np.array([0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.7, 2.1, 2.4,
                     2.9, 3.3, 3.9, 4.4, 5, 5.7, 6.4, 7.1, 7.9, 8.7, 9.4,
                     10.1, 10.8, 11.5, 12.2, 12.9, 13.6, 14.2])
+
+dates = ["2019-05-28", "2019-06-21", "2019-07-01", "2019-07-07", "2019-07-08"]
 
 
 def create_subplots():
@@ -77,7 +66,17 @@ def create_subplots():
     ax.tick_params(labelcolor='w', top=False, bottom=False, left=False,
                    right=False)
     gs = fig.add_gridspec(2, 3, hspace=0.1, wspace=0.1)
-    axs = gs.subplots(sharex="col", sharey="row")
+    ax1 = plt.subplot(gs[0, 0])
+    ax2 = plt.subplot(gs[0, 1])
+    ax3 = plt.subplot(gs[0, 2])
+    ax4 = plt.subplot(gs[1, 0])
+    ax5 = plt.subplot(gs[1, 1])
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    plt.setp(ax2.get_xticklabels(), visible=False)
+    plt.setp(ax2.get_yticklabels(), visible=False)
+    plt.setp(ax3.get_yticklabels(), visible=False)
+    plt.setp(ax5.get_yticklabels(), visible=False)
+    axs = np.array([ax1, ax2, ax3, ax4, ax5])
     return fig, axs, ax
 
 
@@ -101,31 +100,7 @@ def get_bins(bin_limits):
     return bins
 
 
-def get_var_key(var):
-    """Get variable key
-
-    The radar is always automatically attenuated. When a variable with
-    attenuation applied is wanted for the radar, return the standard
-    variable.
-
-    Args:
-        var (str): Variable name.
-
-    Returns:
-        str:
-            Data key corresponding to variable name.
-
-    """
-    if var == "Zhh_corr":
-        var = "Zhh"
-    elif var == "DWR_corr":
-        var = "DWR"
-    elif var == "Zdr_corr":
-        var = "Zdr"
-    return var
-
-
-def get_cfad_data(src, cfad_path, radar, var):
+def get_cfad_data(src, cfad_path, var):
     """Get cfad data
 
     Gets the CFAD data path, depending on the data source, radar and variable
@@ -135,7 +110,6 @@ def get_cfad_data(src, cfad_path, radar, var):
         src (str or int): Data source. Either 'DWD' or th WRF ID of the
             microphysics scheme.
         cfad_path (str): Folder where the CFAD data arrays are located.
-        radar (str): Radar name.
         var (str): Variable name.
 
     Returns:
@@ -143,15 +117,20 @@ def get_cfad_data(src, cfad_path, radar, var):
             Loaded CFAD data.
 
     """
-    if src != "Obs":
+    total = None
+    for date in dates:
         data_path = cfad_path + os.sep + "model" + os.sep + "MP" + str(src) \
-            + os.sep + radar + os.sep + str(var) + ".npy"
-    else:
-        var = get_var_key(var)
-        data_path = cfad_path + os.sep + "radar" + os.sep + radar + os.sep \
-            + str(var) + ".npy"
-    data = np.load(data_path)
-    return data
+            + os.sep + "PSD" + os.sep + str(var) + "_" + date + " 00:00:00.npy"
+        try:
+            data = np.load(data_path)
+        except ValueError:
+            continue
+        data[np.isnan(data)] = 0
+        if total is None:
+            total = data
+        else:
+            total += data
+    return total
 
 
 def get_colormesh_lims(x):
@@ -195,13 +174,17 @@ def plot_subplot(ax, data, heights, bins, vmin, vmax):
     y = get_colormesh_lims(heights)
     data_rel = []
     for h in data:
-        data_rel.append(h/np.nansum(h))
-    img = ax.pcolormesh(bins, y[3:-3], np.array(data_rel)[3:-3], cmap="turbo",
-                        norm=mcolors.LogNorm(vmin=vmin, vmax=vmax))
+        if np.nansum(h) > 10**7:
+            data_rel.append(h/np.nansum(h))
+        else:
+            h[:] = 0
+            data_rel.append(h)
+    img = ax.pcolormesh((bins*1000), y[3:-3], np.array(data_rel)[3:-2],
+                        cmap="turbo", norm=mcolors.LogNorm(vmin=vmin, vmax=vmax))
     return img
 
 
-def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax):
+def plot_subplots(axs, sources, data_path, var, bins, vmin, vmax):
     """Plot all subplots
 
     Plots a CFAD for each of the subplots.
@@ -211,7 +194,6 @@ def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax):
         sources (list): List of data sources. Either 'DWD' or WRF ID of
             microphysics scheme.
         data_path (str): Path to CFAD data array.
-        radar (str): Radar name.
         var (str): Variable name.
         bins (numpy.ndarray): Bins within a given range and a given resolution.
         vmin (float): Minimum value range.
@@ -225,7 +207,7 @@ def plot_subplots(axs, sources, data_path, radar, var, bins, vmin, vmax):
     i = 0
     for axi in axs.ravel():
         src = sources[i]
-        data = get_cfad_data(src, data_path, radar, var)
+        data = get_cfad_data(src, data_path, var)
         img = plot_subplot(axi, data, HEIGHTS, bins, vmin=vmin, vmax=vmax)
         i += 1
     return img
@@ -267,24 +249,41 @@ def finish_plot(fig, ax, img, label, filename):
     fig.colorbar(img, cax=cbar_ax, label="Relative frequency", extend="max")
     ax.set_xlabel(label)
     ax.set_ylabel("Height above NN (km)")
+    fig.text(0.06, 0.3, 'Height above NN (km)', rotation=90, fontsize=10)
+    fig.text(0.37, 0.03, label, fontsize=10)
     plt.savefig(filename, bbox_inches="tight")
     plt.close()
+
+
+def get_diameters():
+    """Get diameter bins
+
+    Calculates the bins according to the spectral bin scheme  that uses
+    mass-doubling bins. For rain, they start at d=0.2mm and go up to 3.3 mm.
+
+    """
+    m = 1000*4/3*np.pi*(2*10**(-6))**3  # Mass of 2µm water droplet
+    bins = []
+    rho = 1000
+    for i in range(33):
+        bins.append(((3*m)/(4*rho*np.pi))**(1/3) * 2)
+        m = 2*m
+    return np.array(bins[17:])
 
 
 def main(cfg_file):
     print("Starting main")
     cfg = load_config(cfg_file)
+    bins = get_diameters()
     for var in VARIABLES:
         print(var)
-        bins = get_bins(cfg['bins'][var])
-        for radar in ["Mira35", "Poldirad"]:
-            filename = make_folder(cfg['output']['CFADs'] + os.sep + "plots",
-                                   radar=radar) + var + ".png"
-            fig, axs, ax = create_subplots()
-            img = plot_subplots(axs, SRC, cfg['output']['CFADs'], radar, var,
-                                bins, VLIMS[var][0], VLIMS[var][1])
-            annotate(SRC, fig, LOCS, cfg['legend'])
-            finish_plot(fig, ax, img, PLOT_LABELS[var], filename)
+        filename = make_folder(cfg['output']['CFADs'] + os.sep + "plots") \
+            + os.sep + "PSD" + os.sep + var + ".png"
+        fig, axs, ax = create_subplots()
+        img = plot_subplots(axs, SRC, cfg['output']['CFADs'], var, bins,
+                            VLIMS[var][0], VLIMS[var][1])
+        annotate(SRC, fig, LOCS, cfg['legend'])
+        finish_plot(fig, ax, img, PLOT_LABELS[var], filename)
 
 
 if __name__ == "__main__":

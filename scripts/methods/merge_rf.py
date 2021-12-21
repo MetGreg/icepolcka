@@ -124,8 +124,8 @@ def save(ds, time, mp, radar, output):
     ds.to_netcdf(output, encoding=encoding)
 
 
-def main():
-    cfg = load_config()
+def main(cfg_file):
+    cfg = load_config(cfg_file)
     assert cfg['start'].date() == cfg['end'].date(), "Only daily scripts " \
                                                      "allowed"
     date = cfg['start'].date()
@@ -151,4 +151,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    config_file = "/home/g/Gregor.Koecher/.config/icepolcka/method_paper.yaml"
+    main(config_file)
