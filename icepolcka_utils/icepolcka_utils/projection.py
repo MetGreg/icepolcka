@@ -87,9 +87,6 @@ def proj4_to_osr(proj4str):
     Args:
         proj4str (str): Proj4 string describing the projection.
 
-    Raises:
-        ValueError: If proj4str is not valid.
-
     Returns:
         SpatialReference:
             The SpatialReference that corresponds to the given proj4str.
@@ -98,9 +95,6 @@ def proj4_to_osr(proj4str):
     proj = osr.SpatialReference()
     proj.ImportFromProj4(proj4str)
     proj.AutoIdentifyEPSG()
-    if proj.Validate() == ogr.OGRERR_CORRUPT_DATA:
-        raise ValueError("proj4str validates to 'ogr.OGRERR_CORRUPT_DATA'"
-                         "and can't be imported as OSR object")
     return proj
 
 

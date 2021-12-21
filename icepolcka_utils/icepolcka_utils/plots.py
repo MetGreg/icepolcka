@@ -71,7 +71,7 @@ def add_features(ax):
     Adds some features to the map. This includes rivers, roads and lakes.
 
     Args:
-        ax (cartopy.mpl.geoaxes.GeoAxesSubplot): Axies to which the features
+        ax (cartopy.mpl.geoaxes.GeoAxesSubplot): Axes to which the features
             will be added.
 
     Returns:
@@ -79,26 +79,26 @@ def add_features(ax):
             Axis, where the features have been added.
 
     """
-    roads = cfeature.NaturalEarthFeature('cultural', 'roads', '10m')
-    rivers_10m = cfeature.NaturalEarthFeature('physical',
-                                              'rivers_lake_centerlines', '10m')
-    rivers_eu = cfeature.NaturalEarthFeature('physical', 'rivers_europe', '10m')
-    lakes_eu = cfeature.NaturalEarthFeature('physical', 'lakes_europe', '10m')
-    lakes_10m = cfeature.NaturalEarthFeature('physical', 'lakes', '10m')
-    ax.add_feature(rivers_10m, edgecolor='deepskyblue', facecolor='None',
+    roads = cfeature.NaturalEarthFeature("cultural", "roads", "10m")
+    rivers_10m = cfeature.NaturalEarthFeature("physical",
+                                              "rivers_lake_centerlines", "10m")
+    rivers_eu = cfeature.NaturalEarthFeature("physical", "rivers_europe", "10m")
+    lakes_eu = cfeature.NaturalEarthFeature("physical", "lakes_europe", "10m")
+    lakes_10m = cfeature.NaturalEarthFeature("physical", "lakes", "10m")
+    ax.add_feature(rivers_10m, edgecolor="deepskyblue", facecolor="None",
                    linewidth=0.3)
-    ax.add_feature(rivers_eu, edgecolor='deepskyblue', facecolor='None',
+    ax.add_feature(rivers_eu, edgecolor="deepskyblue", facecolor="None",
                    linewidth=0.2)
-    ax.add_feature(lakes_10m, edgecolor='deepskyblue', facecolor='None',
+    ax.add_feature(lakes_10m, edgecolor="deepskyblue", facecolor="None",
                    linewidth=0.5)
-    ax.add_feature(lakes_eu, edgecolor='deepskyblue', facecolor='None',
+    ax.add_feature(lakes_eu, edgecolor="deepskyblue", facecolor="None",
                    linewidth=0.5)
-    ax.add_feature(lakes_10m, edgecolor='None', facecolor='deepskyblue',
+    ax.add_feature(lakes_10m, edgecolor="None", facecolor="deepskyblue",
                    linewidth=0.5, alpha=0.3)
-    ax.add_feature(lakes_eu, edgecolor='None', facecolor='deepskyblue',
+    ax.add_feature(lakes_eu, edgecolor="None", facecolor="deepskyblue",
                    linewidth=0.5, alpha=0.3)
-    ax.add_feature(roads, edgecolor='grey', facecolor='None', linewidth=0.3)
-    ax.add_feature(cfeature.BORDERS.with_scale('10m'))
+    ax.add_feature(roads, edgecolor="grey", facecolor="None", linewidth=0.3)
+    ax.add_feature(cfeature.BORDERS.with_scale("10m"))
     return ax
 
 

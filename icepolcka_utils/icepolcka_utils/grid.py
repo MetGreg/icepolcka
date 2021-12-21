@@ -38,7 +38,7 @@ def create_column(coords, heights):
     return grid
 
 
-def get_pyart_grids(handles, mask=None):
+def get_pyart_grids(handles, mask=None, var="Zhh_corr"):
     """Get PyArtGrids
 
     Create a PyArtGrid for each RegularGrid handle. This function is just a
@@ -49,6 +49,7 @@ def get_pyart_grids(handles, mask=None):
         handles (list): List of RegularGrid handles.
         mask (numpy.ndarray): Mask to apply on the RegularGrid. False, if a data
             point is not considered (masked).
+        var (str): Field variable name. Defaults to 'Zhh_corr'.
 
     Returns:
         list:
@@ -58,13 +59,13 @@ def get_pyart_grids(handles, mask=None):
     grids = []
     for handle in handles:
         grid_ds = handle.load()
-        grid = get_pyart_grid(grid_ds, mask)
+        grid = get_pyart_grid(grid_ds, mask, var)
         grids.append(grid)
         grid_ds.close()
     return grids
 
 
-def get_pyart_grid(grid_ds, mask=None):
+def get_pyart_grid(grid_ds, mask=None, var="Zhh_corr"):
     """Transform the grid data to a PyArtGrid
 
     In my icepolcka package, I have CR-SIM and DWD data available on a
@@ -77,6 +78,7 @@ def get_pyart_grid(grid_ds, mask=None):
             containing the grid data set.
         mask (numpy.ndarray): Mask to apply on the RegularGrid. False, if a data
             point is not considered (masked).
+        var (str): Field variable name. Defaults to 'Zhh_corr'.
 
     Returns:
         :class:`grid.PyArtGrid`
@@ -84,7 +86,7 @@ def get_pyart_grid(grid_ds, mask=None):
 
     """
     if mask is None:
-        mask = np.ones(grid_ds['Zhh_corr'].shape)
+        mask = np.ones(grid_ds[var].shape)
     time = dt.datetime.strptime(str(grid_ds.attrs['time']),
                                 "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
 
@@ -99,7 +101,7 @@ def get_pyart_grid(grid_ds, mask=None):
     z_grid = np.arange(z_min, z_max + z_res, z_res)
 
     # Get data
-    data = np.where(mask, grid_ds['Zhh_corr'].values, np.nan)
+    data = np.where(mask, grid_ds[var].values, np.nan)
     data_masked = np.ma.masked_where((data < 5) | (np.isnan(data)), data)
 
     # Define time, and grid dictionaries for the PyArtGrid object

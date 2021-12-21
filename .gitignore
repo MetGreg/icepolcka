@@ -3,7 +3,7 @@
 data
 .idea
 *.coverage
-tests/htmlcov
+*/tests/htmlcov
 *.coveragerc
 docs/build
 build

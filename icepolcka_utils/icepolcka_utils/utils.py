@@ -11,13 +11,10 @@ import numpy as np
 import numpy.ma as ma
 
 
-def load_config(config_file=None):
+def load_config(config_file):
     """Load configuration
 
     Loads the configuration from a configuration file.
-
-    If the path to the configuration file is not given, it will be searched
-    in the systems default configuration folder (~/.config/ for linux)
 
     Dates and times within the configuration file are transformed do datetime
     objects by this function.
@@ -33,14 +30,6 @@ def load_config(config_file=None):
             Configuration loaded into a dictionary.
 
     """
-    if config_file is None:
-        config_path = os.path.join(
-            os.environ.get('APPDATA') or
-            os.environ.get('XDG_CONFIG_HOME') or
-            os.path.join(os.environ["HOME"], ".config"),
-            "icepolcka"
-            )
-        config_file = os.path.join(config_path, "method_paper.yaml")
     with open(config_file) as cfg_file:
         cfg = yaml.load(cfg_file, Loader=yaml.SafeLoader)
 

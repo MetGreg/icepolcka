@@ -5,7 +5,7 @@
 data:
     WRF: /project/meteo/work//Gregor.Koecher/icepolcka/data/wrf/
     CRSIMOut: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/crsim_out/
-    CRSIM: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/crsim/
+    CRSIM: /project/meteo/work/Gregor.Koecher/icepolcka/data/crsim/
     RFOut: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/rf_out/
     RF: /project/meteo-scratch/Gregor.Koecher/icepolcka/data/rf/
     DWD: /archive/meteo/external-obs/dwd/radar/c_band_isen_20190401-20201031/extracted/
@@ -16,14 +16,14 @@ data:
 
 # Data base SQL files
 database:
-    WRF: /home/g/Gregor.Koecher/icepolcka/data/wrf.db
-    CRSIM: /home/g/Gregor.Koecher/icepolcka/data/crsim.db
-    RF: /home/g/Gregor.Koecher/icepolcka/data/rf.db
-    DWD: /home/g/Gregor.Koecher/icepolcka/data/dwd.db
-    RG: /home/g/Gregor.Koecher/icepolcka/data/rg.db
-    MIRA: /home/g/Gregor.Koecher/icepolcka/data/mira.db
-    POLDI: /home/g/Gregor.Koecher/icepolcka/data/poldi_new.db
-    TRACKS: /home/g/Gregor.Koecher/icepolcka/data/tracks.db
+    WRF: /home/g/Gregor.Koecher/icepolcka/db/wrf.db
+    CRSIM: /home/g/Gregor.Koecher/icepolcka/db/crsim.db
+    RF: /home/g/Gregor.Koecher/icepolcka/db/rf.db
+    DWD: /home/g/Gregor.Koecher/icepolcka/db/dwd.db
+    RG: /home/g/Gregor.Koecher/icepolcka/db/rg.db
+    MIRA: /home/g/Gregor.Koecher/icepolcka/db/mira.db
+    POLDI: /home/g/Gregor.Koecher/icepolcka/db/poldi_new.db
+    TRACKS: /home/g/Gregor.Koecher/icepolcka/db/tracks.db
 
 # Output paths
 output:
@@ -105,7 +105,7 @@ cart_grid:
     vert_res: 100  # Vertical resolution [m] of Cartesian grid.
 
 # Height steps from a MP8 simulation at 01.07.2019 12 UTC, rounded to 100 m.
-WRFGrid: [0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.7, 2.1, 2.4, 2.9, 3.3, 3.9, 4.4, 5, 5.7, 6.4, 7.1, 7.9, 8.7, 9.4, 10.1, 10.8, 11.5, 12.2, 12.9, 13.6, 14.2, 14.9]
+WRFGrid: [0.5, 0.6, 0.7, 0.8, 0.9, 1.1, 1.2, 1.5, 1.7, 2.1, 2.4, 2.9, 3.3, 3.9, 4.4, 5, 5.7, 6.4, 7.1, 7.9, 8.7, 9.4, 10.1, 10.8, 11.5, 12.2, 12.9, 13.6, 14.2]
 max_r: 24000  # Maximum range [m] towards center (Mira-35) to be considered.
 
 
@@ -137,11 +137,15 @@ bins:
     Zdr_corr: [-1, 4, 0.2]
     DWR: [-5, 25, 1]
     DWR_corr: [-5, 25, 1]
+    Kdp: [-3, 6, 0.5]
+    PSD: [0, 0.010, 0.0001]
+    Adp: [0, 0.5, 0.025]
+    Ah: [0, 1, 0.05]
 
 # Extent of map that is shown (lon_min, lon_max, lat_min, lat_max)
 extent:
     Munich: [10.53, 12.65, 47.43, 48.85]
-    Domain: [9.5, 14.5, 46.6, 49.7]
+    Domain: [9.5, 14.50, 46.6, 49.7]
     Inset: [11.22, 11.93, 47.94, 48.44]
 
 # Legend names
@@ -153,6 +157,13 @@ legend:
     50: P3
     DWD: Observation
     Obs: Observation
+
+plot_config:
+    xlabel: [0.5, -0.08]  # Position of xlabel
+    ylabel: [-0.08, 0.55]  # Position of ylabel
+    img_ratio: 0.6  # Image ratio used to adjust colorbar size
+    ytitle: 1.03  # Height of title
+
 
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -168,12 +179,13 @@ sites:
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # General Configs 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-start: '07.07.2019 00:00:00' # Starting date (dd.mm.yyyy HH:MM:SS)
-end: '07.07.2019 23:59:59' # Ending date (dd.mm.yyyy HH:MM:SS)
-date: '07.07.2019' # Date of interest (dd.mm.yyyy) 
+start: '29.04.2019 00:00:00' # Starting date (dd.mm.yyyy HH:MM:SS)
+end: '12.10.2020 23:59:59' # Ending date (dd.mm.yyyy HH:MM:SS)
+date: '28.05.2019' # Date of interest (dd.mm.yyyy) 
 radar: Isen  # Radar name 
-mp: 8  # WRF ID of microphysics scheme
+mp: 50  # WRF ID of microphysics scheme
+hm: parimedice 
 source: MODEL  # Whether DWD or MODEL data input
 update: False  # Whether to update the data base with new files
 recheck: False  # Whether to recheck existing files on changes 
-exe: /home/g/Gregor.Koecher/.conda/envs/ice/bin/python
+exe: /home/g/Gregor.Koecher/anaconda3/envs/ice/bin/python

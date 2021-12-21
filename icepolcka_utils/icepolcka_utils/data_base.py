@@ -122,7 +122,7 @@ def create_db(db, s=None):
     return s
 
 
-def get_closest(query, col, the_time):
+def get_closest(query, col, time):
     """Get closest data in time
 
     Returns the closest row to input date time.
@@ -131,21 +131,21 @@ def get_closest(query, col, the_time):
         query (sqlalchemy.orm.query.Query): Query to be searched.
         col (sqlalchemy.orm.attributes.InstrumentedAttribute): SQL table
             column.
-        the_time (datetime.datetime): Input time [UTC].
+        time (datetime.datetime): Input time [UTC].
 
     Returns:
         sqlalchemy data entry:
             The closest table entry.
 
     """
-    greater = query.filter(col > the_time).order_by(col.asc()).first()
-    lesser = query.filter(col <= the_time).order_by(col.desc()).first()
+    greater = query.filter(col > time).order_by(col.asc()).first()
+    lesser = query.filter(col <= time).order_by(col.desc()).first()
     if greater is None:
         return lesser
     if lesser is None:
         return greater
-    greater_dif = abs(getattr(greater, col.name) - the_time)
-    lesser_dif = abs(getattr(lesser, col.name) - the_time)
+    greater_dif = abs(getattr(greater, col.name) - time)
+    lesser_dif = abs(getattr(lesser, col.name) - time)
 
     if greater_dif < lesser_dif:
         return greater
@@ -281,13 +281,6 @@ class RFData(Base):
     mp = relationship(MPScheme, backref=backref("rf_data", uselist=True))
 
 
-class DWDData(Base):
-    __tablename__ = "dwd_data"
-    id = Column(Integer, primary_key=True)
-    file_path = Column(String)
-    time = Column(DateTime)
-
-
 class RGData(Base):
     __tablename__ = "regular_grid_data"
     id = Column(Integer, primary_key=True)
@@ -314,6 +307,13 @@ class TracksData(Base):
     radar = relationship(Radar, backref=backref("tracks_data", uselist=True))
 
 
+class DWDData(Base):
+    __tablename__ = "dwd_data"
+    id = Column(Integer, primary_key=True)
+    file_path = Column(String)
+    time = Column(DateTime)
+
+
 class PPIData(Base):
     __tablename__ = "ppi_data"
     id = Column(Integer, primary_key=True)
@@ -325,6 +325,7 @@ class PPIData(Base):
     radar = relationship(Radar, backref=backref("ppi_data", uselist=True))
     dataset_id = Column(Integer, ForeignKey("dataset.id"))
     dataset = relationship(Dataset, backref=backref("ppi_data", uselist=True))
+    scan_number = Column(Integer)
 
 
 class SRHIData(Base):
@@ -421,15 +422,6 @@ class DataBase(object):
         recheck (bool): Whether to recheck if files in data base have changed.
 
     """
-    def update_db(self, recheck=True):
-        """Updates the data base with missing data
-
-        Args:
-            recheck (Bool): Whether to check data base for changed files.
-
-        """
-        raise NotImplementedError
-
     def get_data(self, start_time, end_time):
         """Gets data in given time range
 
@@ -468,6 +460,15 @@ class DataBase(object):
                 List of :meth:`ResultHandle` objects that correspond to the
                 latest 'n' data files. Ordered in a way so that the first entry
                 corresponds to the latest data file.
+        """
+        raise NotImplementedError
+
+    def update_db(self, recheck=True):
+        """Updates the data base with missing data
+
+        Args:
+            recheck (Bool): Whether to check data base for changed files.
+
         """
         raise NotImplementedError
 
@@ -769,9 +770,9 @@ class WRFDataBase(DataBase):
 
                 # Dataset entry
                 if len(existing_dataset) == 0:
-                    dataset = Dataset(model=self.model, start_time=start_time,
-                                      end_time=end_time, domain=domain,
-                                      mp=mp_scheme)
+                    dataset = Dataset(start_time=start_time, end_time=end_time,
+                                      domain=domain, mp=mp_scheme,
+                                      model=self.model)
 
                     model_data = ModelData()
                 elif len(existing_dataset) == 1:
@@ -1228,147 +1229,6 @@ class RFDataBase(DataBase):
                     # Make new entry
                     new_entry = RFData(file_path=file_path, time=rf_time,
                                        mp=mp_scheme, radar=radar)
-                    self._session.add(new_entry)
-                self._session.commit()
-        self._session.commit()
-
-
-class DWDDataBase(DataBase):
-    """Radar data base of DWD volume data.
-
-    This class serves as an API to access DWD data. For documentation of
-    initialization and general DataBase methods, see super class.
-
-    """
-    def __init__(self, data_path, db, update=True, recheck=True):
-        self._data_path = data_path
-        self._handler = DWDDataHandler()
-        self._db = "sqlite:///" + db
-        self._recheck = recheck
-        self._update = update
-        if not os.path.exists(db):
-            create_db(db)
-
-    def __enter__(self):
-        engine = create_engine(self._db)
-        Base.metadata.bind = engine
-        Base.metadata.create_all(engine)
-        self._session = sessionmaker(bind=engine)()
-        if self._update:
-            self.update_db(self._recheck)
-        return self
-
-    def __exit__(self, *args):
-        self._session.close()
-
-    def _return_data(self, query):
-        """Return the result handle
-
-        Returns the corresponding ResultHandle to the query result.
-
-        Args:
-            query (DWDData): Query result.
-
-        Returns:
-            ResultHandle:
-                To query result corresponding ResultHandle.
-
-        """
-        attrs = {'file_path': query.file_path, 'time': query.time}
-        data_handle = ResultHandle(
-            attrs,
-            lambda: self._handler.load_data(attrs['file_path']))
-        return data_handle
-
-    def _get_query(self):
-        """Returns the basic query with given input parameters
-
-        Returns:
-            query:
-                The sql query.
-
-        """
-        query = self._session.query(DWDData)
-        return query
-
-    def get_data(self, start_time, end_time):
-        query = self._get_query()
-        query = query.filter(
-            DWDData.time >= start_time
-            ).filter(
-            DWDData.time <= end_time
-            )
-        query = query.order_by(DWDData.time.asc())
-        return list(map(self._return_data, query.all()))
-
-    def get_closest_data(self, time):
-        query = self._get_query()
-        closest = get_closest(query, DWDData.time, time)
-        return self._return_data(closest)
-
-    def get_latest_data(self, n=1):
-        query = self._get_query()
-        query = query.order_by(DWDData.time.desc()).limit(n)
-        return list(map(self._return_data, query.all()))
-
-    def update_db(self, recheck=True):
-        available_files = self._session.query(Datafile).all()
-        available_filenames = [x.filename for x in available_files]
-
-        # Loop through all files
-        for subdir, dirs, files in os.walk(self._data_path):
-            for file in sorted(files):
-                file_path = subdir + os.sep + file
-                file_path = os.path.normpath(file_path)
-
-                if not file_path.endswith(".hd5"):
-                    continue
-                if file_path.endswith("20190528.hd5"):  # Wrong file in archive
-                    continue
-
-                if file_path in available_filenames:
-                    if recheck is False:
-                        continue
-
-                    # Check if file needs recheck
-                    data_file = self._session.query(Datafile).filter(
-                        Datafile.filename == file_path).one()
-                    last_checked = data_file.last_checked
-                    checked_ts = dt.datetime.timestamp(last_checked)
-                    filedate = dt.datetime.utcfromtimestamp(
-                        os.path.getmtime(file_path)
-                        )
-                    file_ts = dt.datetime.timestamp(filedate)
-                    if file_ts < checked_ts:
-                        continue
-                    else:
-                        data_file.last_checked = dt.datetime.utcnow()
-
-                # Create new data file
-                else:
-                    # Data file entry
-                    file_type = self._session.query(FileType).filter(
-                        FileType.name == "hdf5").one()
-                    data_file = Datafile(filename=file_path,
-                                         file_type_id=file_type.id,
-                                         last_checked=dt.datetime.utcnow())
-                    self._session.add(data_file)
-
-                # Print some output to make clear that data is loaded
-                print("Updating: ", file_path)
-                scan_data = self._handler.load_data(file_path)
-                time = dt.datetime.strptime(str(scan_data['time']),
-                                            "%Y-%m-%d %H:%M:%S")
-
-                # Find if data entry exists already
-                dwd_data = self._session.query(DWDData).filter(
-                    DWDData.file_path == file_path
-                    ).all()
-                if len(dwd_data) == 1:
-                    dwd_data[0].time = time
-
-                if len(dwd_data) == 0:
-                    new_entry = DWDData(file_path=file_path, time=time)
                     self._session.add(new_entry)
                 self._session.commit()
         self._session.commit()
@@ -1845,15 +1705,14 @@ class RadarDataBase(DataBase):
             Finds the closest rhi to an input datetime.
 
     """
-    def _return_data(self, query):
-        """Return the result handle
+    def get_closest_rhi(self, time):
+        """Find the closest RHI in time
 
-        Returns the corresponding ResultHandle to the query result. This method
-        is intended to be internal and should not be called by the user
-        directly.
+        Finds the closest RHI to the given datetime within the database.
 
         Args:
-            query (PPIData or RHIData): Query result.
+            time (datetime.datetime): Time [UTC], to which the closest RHI is
+                returned.
 
         Returns:
             ResultHandle:
@@ -1862,13 +1721,13 @@ class RadarDataBase(DataBase):
         """
         raise NotImplementedError
 
-    def get_closest_rhi(self, time):
-        """Find the closest RHI in time
+    def get_closest_ppi(self, time):
+        """Find the closest PPI in time
 
-        Finds the closest RHI to the given datetime within the database.
+        Finds the closest PPI to the given datetime within the database.
 
         Args:
-            time (datetime.datetime): Time [UTC], to which the closest RHI is
+            time (datetime.datetime): Time [UTC], to which the closest PPI is
                 returned.
 
         Returns:
@@ -1889,6 +1748,153 @@ class RadarDataBase(DataBase):
 
     def update_db(self, recheck=True):
         raise NotImplementedError
+
+
+class DWDDataBase(RadarDataBase):
+    """Radar data base of DWD volume data.
+
+    This class serves as an API to access DWD data. For documentation of
+    initialization and general DataBase methods, see super class.
+
+    """
+    def __init__(self, data_path, db, update=True, recheck=True):
+        self._data_path = data_path
+        self._handler = DWDDataHandler()
+        self._db = "sqlite:///" + db
+        self._recheck = recheck
+        self._update = update
+        if not os.path.exists(db):
+            create_db(db)
+
+    def __enter__(self):
+        engine = create_engine(self._db)
+        Base.metadata.bind = engine
+        Base.metadata.create_all(engine)
+        self._session = sessionmaker(bind=engine)()
+        if self._update:
+            self.update_db(self._recheck)
+        return self
+
+    def __exit__(self, *args):
+        self._session.close()
+
+    def _return_data(self, query):
+        """Return the result handle
+
+        Returns the corresponding ResultHandle to the query result.
+
+        Args:
+            query (DWDData): Query result.
+
+        Returns:
+            ResultHandle:
+                To query result corresponding ResultHandle.
+
+        """
+        attrs = {'file_path': query.file_path, 'time': query.time}
+        data_handle = ResultHandle(
+            attrs,
+            lambda: self._handler.load_data(attrs['file_path']))
+        return data_handle
+
+    def _get_query(self):
+        """Returns the basic query with given input parameters
+
+        Returns:
+            query:
+                The sql query.
+
+        """
+        query = self._session.query(DWDData)
+        return query
+
+    def get_closest_rhi(self, time):
+        raise NotImplementedError
+
+    def get_closest_ppi(self, time):
+        raise NotImplementedError
+
+    def get_data(self, start_time, end_time):
+        query = self._get_query()
+        query = query.filter(
+            DWDData.time >= start_time
+            ).filter(
+            DWDData.time <= end_time
+            )
+        query = query.order_by(DWDData.time.asc())
+        return list(map(self._return_data, query.all()))
+
+    def get_closest_data(self, time):
+        query = self._get_query()
+        closest = get_closest(query, DWDData.time, time)
+        return self._return_data(closest)
+
+    def get_latest_data(self, n=1):
+        query = self._get_query()
+        query = query.order_by(DWDData.time.desc()).limit(n)
+        return list(map(self._return_data, query.all()))
+
+    def update_db(self, recheck=True):
+        available_files = self._session.query(Datafile).all()
+        available_filenames = [x.filename for x in available_files]
+
+        # Loop through all files
+        for subdir, dirs, files in os.walk(self._data_path):
+            for file in sorted(files):
+                file_path = subdir + os.sep + file
+                file_path = os.path.normpath(file_path)
+
+                if not file_path.endswith(".hd5"):
+                    continue
+                if file_path.endswith("20190528.hd5"):  # Wrong file in archive
+                    continue
+
+                if file_path in available_filenames:
+                    if recheck is False:
+                        continue
+
+                    # Check if file needs recheck
+                    data_file = self._session.query(Datafile).filter(
+                        Datafile.filename == file_path).one()
+                    last_checked = data_file.last_checked
+                    checked_ts = dt.datetime.timestamp(last_checked)
+                    filedate = dt.datetime.utcfromtimestamp(
+                        os.path.getmtime(file_path)
+                        )
+                    file_ts = dt.datetime.timestamp(filedate)
+                    if file_ts < checked_ts:
+                        continue
+                    else:
+                        data_file.last_checked = dt.datetime.utcnow()
+
+                # Create new data file
+                else:
+                    # Data file entry
+                    file_type = self._session.query(FileType).filter(
+                        FileType.name == "hdf5").one()
+                    data_file = Datafile(filename=file_path,
+                                         file_type_id=file_type.id,
+                                         last_checked=dt.datetime.utcnow())
+                    self._session.add(data_file)
+
+                # Print some output to make clear that data is loaded
+                print("Updating: ", file_path)
+                scan_data = self._handler.load_data(file_path)
+                time = dt.datetime.strptime(str(scan_data['time']),
+                                            "%Y-%m-%d %H:%M:%S")
+
+                # Find if data entry exists already
+                dwd_data = self._session.query(DWDData).filter(
+                    DWDData.file_path == file_path
+                    ).all()
+                if len(dwd_data) == 1:
+                    dwd_data[0].time = time
+
+                if len(dwd_data) == 0:
+                    new_entry = DWDData(file_path=file_path, time=time)
+                    self._session.add(new_entry)
+                self._session.commit()
+        self._session.commit()
 
 
 class MiraDataBase(RadarDataBase):
@@ -1980,6 +1986,13 @@ class MiraDataBase(RadarDataBase):
         closest = get_closest(query, RHIData.start_time, time)
         return self._return_data(closest)
 
+    def get_closest_ppi(self, time):
+        query = self._session.query(PPIData).filter(
+            PPIData.radar == self.radar
+            )
+        closest = get_closest(query, PPIData.start_time, time)
+        return self._return_data(closest)
+
     def get_data(self, start_time, end_time):
         raise NotImplementedError
 
@@ -2053,8 +2066,6 @@ class MiraDataBase(RadarDataBase):
                 # Print some output to make clear that data is loaded
                 print("Updating: ", file_path)
                 mira_data = self._handler.load_data(dataset_dict)
-                if mira_data is None:
-                    continue
                 res = mira_data['range'][1] - mira_data['range'][0]
 
                 # Get dataset
@@ -2084,11 +2095,47 @@ class MiraDataBase(RadarDataBase):
                     raise AssertionError("Length of dataset must be 0 or 1")
 
                 rhi_scans = self._handler.find_rhi_sweeps(mira_data)
+                ppi_scans = self._handler.find_ppi_sweeps(mira_data)
 
                 # Check if any scan was found
-                if len(rhi_scans) == 0:
+                if len(ppi_scans) == 0 and len(rhi_scans) == 0:
                     self._session.commit()
                     continue
+
+                # Make entry for each PPI scan
+                for ppi in ppi_scans:
+                    ppi_data = mira_data.isel(time=ppi)
+                    ele = ppi_data.elv.mean(axis=0)
+                    start_time = dt.datetime.strptime(
+                        str(ppi_data.times.values[0]),
+                        "%Y-%m-%dT%H:%M:%S.%f000").replace(microsecond=0)
+                    end_time = dt.datetime.strptime(
+                        str(ppi_data.times.values[-1]),
+                        "%Y-%m-%dT%H:%M:%S.%f000").replace(microsecond=0)
+
+                    # Find if scan exists already
+                    scans = self._session.query(PPIData).filter(
+                        PPIData.radar == self.radar
+                        ).filter(
+                        PPIData.start_time == start_time
+                        ).all()
+
+                    # Update scan data
+                    if len(scans) == 1:
+                        scan = scans[0]
+                        scan.start_time = start_time
+                        scan.end_time = end_time
+                        scan.elevation = ele
+                        scan.resolution = res
+                        scan.radar = self.radar
+                        scan.dataset = dataset
+
+                    # Create new scan data
+                    elif len(scans) == 0:
+                        scan = PPIData(start_time=start_time, end_time=end_time,
+                                       elevation=ele, radar=self.radar,
+                                       dataset=dataset, resolution=res)
+                        self._session.add(scan)
 
                 # Make entry for each RHI scan
                 for rhi in rhi_scans:
@@ -2187,6 +2234,13 @@ class PoldiDataBase(RadarDataBase):
         closest = get_closest(query, RHIData.start_time, time)
         return self._return_data(closest)
 
+    def get_closest_ppi(self, time):
+        query = self._session.query(PPIData).filter(
+            PPIData.radar == self.radar
+            )
+        closest = get_closest(query, PPIData.start_time, time)
+        return self._return_data(closest)
+
     def get_closest_srhi(self, time):
         """Get closest Sector RHI
 
@@ -2197,8 +2251,8 @@ class PoldiDataBase(RadarDataBase):
                 Sector RHI is returned.
 
         Returns:
-            ResultHandle:
-                To query result corresponding ResultHandle.
+            list:
+                All RHI Resulthandles corresponding to the SRHI.
 
         """
         query = self._session.query(SRHIData).filter(

@@ -1,0 +1,15 @@
+arm_pyart
+cartopy
+coverage
+h5py
+ipython
+matplotlib
+netCDF4
+numpy
+pandas
+pytz
+pyyaml
+scipy
+sqlalchemy
+wradlib
+xarray

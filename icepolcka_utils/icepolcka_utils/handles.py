@@ -82,6 +82,56 @@ class CRSIMDataHandler(DataHandler):
         return ds
 
 
+class RFDataHandler(DataHandler):
+    """Radar filter data handler
+
+    Class to handle radar filter data. For documentation of general DataHandler
+    methods, see mother class.
+
+    """
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load_data(data_file):
+        ds = xr.open_dataset(data_file)
+        return ds
+
+
+class RGDataHandler(DataHandler):
+    """Regular grid data handler
+
+    Class to handle regular grid data. For documentation of general DataHandler
+    methods, see mother class.
+
+    """
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load_data(data_file):
+        ds = xr.open_dataset(data_file)
+        return ds
+
+
+class TracksDataHandler(object):
+    """Cell tracks data handler
+
+    Class to handle cell tracks data. For documentation of general DataHandler
+    methods, see mother class.
+
+    """
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def load_data(data_file):
+        with open(data_file, "rb") as f:
+            pkl = pickle.load(f)
+        ds = pickle.loads(pkl)
+        return ds
+
+
 class DWDDataHandler(DataHandler):
     """DWD volume data handler
 
@@ -173,56 +223,6 @@ class DWDDataHandler(DataHandler):
         return reflect
 
 
-class RFDataHandler(DataHandler):
-    """Radar filter data handler
-
-    Class to handle radar filter data. For documentation of general DataHandler
-    methods, see mother class.
-
-    """
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def load_data(data_file):
-        ds = xr.open_dataset(data_file)
-        return ds
-
-
-class RGDataHandler(DataHandler):
-    """Regular grid data handler
-
-    Class to handle regular grid data. For documentation of general DataHandler
-    methods, see mother class.
-
-    """
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def load_data(data_file):
-        ds = xr.open_dataset(data_file)
-        return ds
-
-
-class TracksDataHandler(object):
-    """Cell tracks data handler
-
-    Class to handle cell tracks data. For documentation of general DataHandler
-    methods, see mother class.
-
-    """
-    def __init__(self):
-        pass
-
-    @staticmethod
-    def load_data(data_file):
-        with open(data_file, "rb") as f:
-            pkl = pickle.load(f)
-        ds = pickle.loads(pkl)
-        return ds
-
-
 class MiraDataHandler(DataHandler):
     """Mira-35 data handler
 
@@ -265,17 +265,21 @@ class MiraDataHandler(DataHandler):
                 Xarray containing the data.
 
         """
-        if not (dataset['mmclx_file'] is None or dataset['mmclx_file'] == ""):
+        try:
             ds_mmclx = xr.open_dataset(dataset['mmclx_file'], decode_cf=False)
             ds_mmclx['time'].attrs['units'] = "seconds since 1970-01-01"
             ds_mmclx = xr.decode_cf(ds_mmclx)
             ds = ds_mmclx
+        except ValueError:
+            pass
 
-        if not (dataset['nc_file'] is None or dataset['nc_file'] == ""):
+        try:
             ds_nc = xr.open_dataset(dataset['nc_file'], decode_cf=False)
             ds_nc['time'].attrs['units'] = "seconds since 1970-01-01"
             ds_nc = xr.decode_cf(ds_nc)
             ds = ds_nc
+        except ValueError:
+            pass
 
         # If the files within the ds_dictionary do not exist, raise error
         if "ds" not in locals():
@@ -348,6 +352,34 @@ class MiraDataHandler(DataHandler):
             alt = 541
 
         return lon, lat, alt
+
+    @staticmethod
+    def find_ppi_sweeps(data, n=30):
+        """Find all PPI sweeps in data
+
+        Finds the PPI scans by azimuth speed. When the azimuth speed is
+        between 0.5 and 5 °/s, while the elevation speed is zero, is assumed to
+        be an PPI scan. There must also be at least 'n' data points in a row to
+        be treated as a PPI-scan. Furthermore, the elevation must be lower than
+        90° to count as a PPI scan.
+
+        Args:
+            data (:xarray:`xarray.Dataset <Dataset.html>`): Xarray containing
+                mira radar data.
+            n (int): Number of data points in a row to be treated as a PPI
+                scan. Defaults to 30.
+
+        Returns:
+           list:
+            List with slices that correspond to the PPI scans within the data.
+
+        """
+        trig = ((abs(data.azv) > 0.5) & (abs(data.azv) < 5.0)
+                & (abs(data.elvv) < 0.1) & (abs(data.elv) < 90))
+        labels, num = ndimage.label(trig)
+        sweeps = ndimage.find_objects(labels)
+        sweeps = [s[0] for s in sweeps if s[0].stop - s[0].start > n]
+        return sweeps
 
     @staticmethod
     def find_rhi_sweeps(data, n=30):
