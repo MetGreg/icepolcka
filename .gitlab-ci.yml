@@ -1,0 +1,21 @@
+coverage:
+    image: ubuntu:latest
+    script:
+        - apt update && apt install -fy git wget build-essential
+        - wget https://repo.anaconda.com/archive/Anaconda3-2021.05-Linux-x86_64.sh -O ~/anaconda.sh
+        - bash ~/anaconda.sh -b -p $HOME/anaconda
+        - eval "$(/root/anaconda/bin/conda shell.bash hook)"
+        - conda init
+        - conda create -y --name test
+        - conda activate test
+        - conda config --add channels conda-forge
+        - conda install -y --file requirements.txt
+        - cd icepolcka_utils
+        - python setup.py install
+        - conda update libstdcxx-ng  # Otherwise some links are not working
+        - make coverage
+    tags:
+        - docker.meteo.physik.lmu.de
+    variables:
+        DEBIAN_FRONTEND: noninteractive
+        MPLBACKEND: agg

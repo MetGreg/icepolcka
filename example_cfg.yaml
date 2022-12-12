@@ -1,0 +1,124 @@
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Paths
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# General data paths
+data:
+    WRF: /project/meteo/work/Gregor.Koecher/icepolcka/data/wrf/
+    RG: /project/meteo/work/Gregor.Koecher/icepolcka/data/rg/
+    RF: /project/meteo/work/Gregor.Koecher/icepolcka/data/rf/
+    RFOut: /scratch/g/Gregor.Koecher/icepolcka/data/rf_out/
+    CRSIM: /project/meteo/work/Gregor.Koecher/icepolcka/data/crsim/
+    CRSIMOut: /scratch/g/Gregor.Koecher/icepolcka/data/crsim_out/
+    TEMP: /project/meteo/work/Gregor.Koecher/icepolcka/data/temp/
+    HMC: /project/meteo/work/Gregor.Koecher/icepolcka/data/hmc/
+    DWD: /archive/meteo/external-obs/dwd/radar/c_band_isen_20190401-20201031/extracted/
+
+# Data base SQL files
+database:
+    WRF: /home/g/Gregor.Koecher/icepolcka/db/wrf.db
+    RG: /home/g/Gregor.Koecher/icepolcka/db/rg.db
+    RF: /home/g/Gregor.Koecher/icepolcka/db/rf.db
+    CRSIM: /home/g/Gregor.Koecher/icepolcka/db/crsim.db
+    TEMP: /home/g/Gregor.Koecher/icepolcka/db/temp.db
+    HMC: /home/g/Gregor.Koecher/icepolcka/db/hmc.db
+    DWD: /home/g/Gregor.Koecher/icepolcka/db/dwd.db
+
+# Output paths
+output:
+    HIW: /scratch/g/Gregor.Koecher/icepolcka/output/hiw/
+    PLOTS: /scratch/g/Gregor.Koecher/icepolcka/plots/
+    PSD: /scratch/g/Gregor.Koecher/icepolcka/output/psd/
+
+# Path to data masks (Distance and Height mask)
+masks:
+    Distance: /home/g/Gregor.Koecher/icepolcka/masks/distance_mask.npy
+    RF: /home/g/Gregor.Koecher/icepolcka/masks/rf.npy
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Script settings
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Config for the CR-SIM simulation script
+crsim:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_crsim/
+    exe: /project/meteo/work/met-wrf-chem/crsim-3.33/bin/crsim
+    params: /home/g//Gregor.Koecher/icepolcka/crsim/parameters/
+
+# Config for the shrink data script
+shrink:
+    workdir: /project/meteo-scratch/Gregor.Koecher/cluster/jobs_shrink/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/cluster/shrink_data.py
+
+# Config for the temp script
+temp:
+    workdir: /scratch/g/Gregor.Koecher/cluster/jobs_temp/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/cluster/itp_temp.py
+    
+# Config for hydrometeor classification
+hmc:
+    workdir: /scratch/g/Gregor.Koecher/cluster/jobs_hmc/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/cluster/hmc.py
+
+# Config for the radar filter script
+rf:
+    workdir: /scratch/g/Gregor.Koecher/cluster/jobs_rf/
+    folder: /project/meteo/work/met-wrf-chem/radar_filter_v1.2.1/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/cluster/rf.py
+
+# Config for the RegularGrid interpolation script
+rg:
+    workdir: /scratch/g/Gregor.Koecher/cluster/jobs_rg/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/methods/cluster/rg.py
+
+# Config for hiw statistics
+hiw:
+    workdir: /scratch/g/Gregor.Koecher/cluster/jobs_hiw/
+    script: /home/g/Gregor.Koecher/icepolcka/scripts/analysis/cluster/high_impact_weather.py
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Grids 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Spherical radar grid definition
+sphere:
+    Isen:
+        max_range: 144000 
+        min_az: 0
+        max_az: 360
+        elevs: [0.5, 0.8, 1.5, 2.5, 3.5, 4.5, 5.5, 8, 12, 17, 25]
+
+# Cartesian Grid settings
+cart_grid:
+    z_min: -100  # Minimum height [m] of Cartesian grid.
+    z_max: 15000 # Maximum height [m] of Cartesian grid.
+    vert_res: 100  # Vertical resolution [m] of Cartesian grid.
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Constants 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Radar site coordinates (lon, lat, alt)
+sites:
+    Isen: [12.101779, 48.17405, 678]
+    Mira35: [11.573396, 48.147845, 541]
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# HIW Statistics 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# Height indices for HIW statistics
+wrf_hgt: 7
+hmc_hgt: 16
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# General Configs 
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+max_r: 24000
+start: '28.05.2019 12:00:00'  # Starting date (dd.mm.yyyy HH:MM:SS)
+end: '28.05.2019 12:00:59'  # Ending date (dd.mm.yyyy HH:MM:SS)
+update: True
+radar: Isen
+mp: 8
+source: MODEL
+exe: /home/g/Gregor.Koecher/anaconda3/envs/ice/bin/python

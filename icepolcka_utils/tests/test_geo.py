@@ -1,48 +1,55 @@
 """Tests for geo module"""
 import unittest
-import numpy as np
-from icepolcka_utils.geo import get_bin_altitude, get_bin_distance, \
-    get_pos_from_dist, get_target_distance
+from icepolcka_utils import geo
 
 
 class GeoTest(unittest.TestCase):
+    """Tests for all functions in the geo module"""
 
-    def setUp(self):
-        pass
+    def test_get_bin_altitude_returns_correct_height(self):
+        """Tests if correct height is returned for site_alt equal to 0"""
+        height = geo.get_bin_altitude(100, 3)
+        exp_h = 5  # Calculated by hand
+        self.assertAlmostEqual(height, exp_h, places=0)
 
-    def tearDown(self):
-        pass
+    def test_get_bin_altitude_works_with_site_alt(self):
+        """Tests if correct height is returned when site_alt is not 0"""
+        height = geo.get_bin_altitude(10000, 10, site_alt=500)
+        exp_h = 2242  # Calculated by hand
+        self.assertAlmostEqual(height, exp_h, places=0)
 
-    def test_get_bin_altitude(self):
-        h1 = get_bin_altitude(100, 3)
-        h2 = get_bin_altitude(10000, 10, site_alt=500)
-        exp_h1 = 5
-        exp_h2 = 2242
-        self.assertAlmostEqual(h1, exp_h1, places=0)
-        self.assertAlmostEqual(h2, exp_h2, places=0)
+    def test_get_bin_distance_returns_correct_height(self):
+        """Tests if correct distance is returned for site_alt equal to 0"""
+        s_arc = geo.get_bin_distance(100, 3)
+        exp_s = 100  # Calculated by hand
+        self.assertAlmostEqual(s_arc, exp_s, places=0)
 
-    def test_get_bin_distance(self):
-        s1 = get_bin_distance(100, 3)
-        s2 = get_bin_distance(10000, 10, site_alt=500)
-        exp_s1 = 100
-        exp_s2 = 9845
-        self.assertAlmostEqual(s1, exp_s1, places=0)
-        self.assertAlmostEqual(s2, exp_s2, places=0)
+    def test_get_bin_distance_works_with_site_alt(self):
+        """Tests if correct distance is returned when site_alt is not 0"""
+        s_arc = geo.get_bin_distance(10000, 10, site_alt=500)
+        exp_s = 9845  # Calculated by hand
+        self.assertAlmostEqual(s_arc, exp_s, places=0)
 
-    def test_get_target_distance(self):
-        origin = (11.573550, 48.148021)  # Mira
+    def test_get_target_distance_calculates_distance_correctly(self):
+        """Tests if the calculated distance between Mira-35 and Poldirad is correct"""
+        origin = (11.573550, 48.148021)  # Mira-35
         target = (11.278901, 48.086721)  # Poldi
-        d = get_target_distance(origin, target) / 1000
-        self.assertAlmostEqual(d, 22.9, places=1)  # Tested with google maps
+        dist = geo.get_target_distance(origin, target) / 1000
+        self.assertAlmostEqual(dist, 22.9, places=1)  # Tested with Google Maps
 
-    def test_get_pos_from_dist(self):
+    def test_get_pos_from_dist_calculates_position_correctly_towards_north(self):
+        """Tests if the calculated position is correct when pointing north"""
         site = (11.5661, 48.1524)
-        lon1, lat1 = get_pos_from_dist(site, 1000, 0)
-        lon2, lat2 = get_pos_from_dist(site, 1000, 180)
-        self.assertAlmostEqual(lon1, 11.5661, places=4)
-        self.assertAlmostEqual(lat1, 48.1614, places=4)
-        self.assertAlmostEqual(lon2, 11.5661, places=4)
-        self.assertAlmostEqual(lat2, 48.1434, places=4)
+        lon, lat = geo.get_pos_from_dist(site, 1000, 0)
+        self.assertAlmostEqual(lon, 11.5661, places=4)  # Latitude must not change towards north
+        self.assertAlmostEqual(lat, 48.1614, places=4)  # Calculated by hand
+
+    def test_get_pos_from_dist_calculates_position_correctly_towards_south(self):
+        """Tests if the calculated position is correct when pointing south"""
+        site = (11.5661, 48.1524)
+        lon, lat = geo.get_pos_from_dist(site, 1000, 180)
+        self.assertAlmostEqual(lon, 11.5661, places=4)  # Longitude must not change towards south
+        self.assertAlmostEqual(lat, 48.1434, places=4)  # Calculated by hand
 
 
 if __name__ == "__main__":

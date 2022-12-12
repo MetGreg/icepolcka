@@ -1,0 +1,13 @@
+numpy
+cartopy
+matplotlib
+pytz
+xarray
+scipy
+pandas
+wradlib
+netcdf4
+yaml
+pyyaml
+sqlalchemy
+setuptools

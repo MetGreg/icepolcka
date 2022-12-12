@@ -1,102 +1,92 @@
 """Tests for grid module"""
 import os
-import pytz
 import unittest
 import datetime as dt
-import numpy as np
-from icepolcka_utils.grid import create_column, get_pyart_grids, \
-    get_pyart_grid, PyArtGrid
 
-from icepolcka_utils.data_base import RGDataBase
+import pytz
+import numpy as np
+
+from tests import utils as test_utils
+
+from icepolcka_utils import grid
+from icepolcka_utils.database import handles
 
 
 class GridTest(unittest.TestCase):
+    """Tests for all functions in the grid module"""
 
     def setUp(self):
-        self.db_path = "data" + os.sep + "rg.db"
-        self.grid_path = "data" + os.sep + "rg" + os.sep
-        with RGDataBase(self.grid_path, self.db_path) as grid_db:
-            self.handle = grid_db.get_latest_data(mp_id=8)[0]
+        self.rg_file = "test_data" + os.sep + "rg" + os.sep + "120000.nc"
+        self.time = dt.datetime(2019, 5, 28, 12)  # Time of rg file
 
-    def tearDown(self):
-        if os.path.exists(self.db_path):
-            os.remove(self.db_path)
+    def test_get_pyart_grid_returns_correct_date(self):
+        """Test if the grid returned as correct date"""
+        grid_ds = handles.load_xarray(self.rg_file)
+        grid_out = grid.get_pyart_grid(grid_ds)
+        time_out = dt.datetime.utcfromtimestamp(grid_out.time['data'][0])
+        self.assertEqual(time_out, self.time)
 
     @staticmethod
-    def test_create_column():
+    def test_create_column_creates_a_column_as_expected():
+        """Test if the column for given scenario is calculated as expected"""
         coords = np.array([10, 50])
         heights = np.array([1000, 2000])
-        grid = create_column(coords, heights)
-        exp_grid = np.array([[10, 50, 1000], [10, 50, 2000]])
-        np.testing.assert_array_equal(grid, exp_grid)
-
-    def test_get_pyart_grids(self):
-        handles = [self.handle, self.handle]
-        grids = get_pyart_grids(handles, var="Zhh")
-        exp_grid = get_pyart_grid(self.handle.load(), var="Zhh")
-        time_out = dt.datetime.utcfromtimestamp(grids[0].time['data'][0])
-        exp_time = dt.datetime.utcfromtimestamp(exp_grid.time['data'][0])
-        self.assertEqual(time_out, exp_time)
-
-    def test_get_pyart_grid(self):
-        grid_ds = self.handle.load()
-        grid = get_pyart_grid(grid_ds, var="Zhh")
-        time_out = dt.datetime.utcfromtimestamp(grid.time['data'][0])
-        exp_time = dt.datetime(2019, 7, 1, 13, 0, 0)
-        self.assertEqual(time_out, exp_time)
+        col = grid.create_column(coords, heights)
+        exp_col = np.array([[10, 50, 1000], [10, 50, 2000]])  # Calculated by hand
+        np.testing.assert_array_equal(col, exp_col)
 
 
 class PyArtGridTest(unittest.TestCase):
+    """Tests for the PyArtGrid class"""
 
     def setUp(self):
-        self.data, self.data_masked = self.make_data()
+        self.data, self.data_masked = self._make_data()
         time = dt.datetime.utcnow()
         self.time = time.replace(tzinfo=pytz.utc).replace(microsecond=0)
-        self.grid = self.make_2D_grid()
+        self.grid = test_utils.make_pyart_grid(self.data_masked, self.time)
         self.params = {'FIELD_THRESH': 32, 'MIN_SIZE': 3, 'GS_ALT': 1500}
 
-    def tearDown(self):
-        pass
-
-    def test_extract_grid_data(self):
+    def test_extract_grid_data_returns_correct_raw_grid(self):
+        """Test if the raw_grid that is returned is as expected"""
         field = "reflectivity"
         grid_size = np.array([np.nan, 1000, 1000])
-        raw, frame = self.grid.extract_grid_data(field, grid_size, self.params)
+        raw, _ = self.grid.extract_grid_data(field, grid_size, self.params)
+        np.testing.assert_array_equal(raw, self.data)  # Raw frame should equal input data
+
+    def test_extract_grid_data_returns_correct_frame(self):
+        """Test if the filtered frame that is returned is as expected"""
+        field = "reflectivity"
+        grid_size = np.array([np.nan, 1000, 1000])
+        _, frame = self.grid.extract_grid_data(field, grid_size, self.params)
         exp_frame = np.array([[0, 0, 0], [0, 0, 0], [1, 1, 1]])
-        np.testing.assert_array_equal(raw, self.data)
         np.testing.assert_array_equal(frame, exp_frame)
 
-    def test_parse_grid_datetime(self):
+    def test_parse_grid_datetime_returns_correct_time(self):
+        """Test if the parse_grid_datetime method returns the expected time"""
         time = self.grid.parse_grid_datetime()
-        self.assertEqual(time, self.time)
+        self.assertEqual(time, self.time)  # Time must equal input time
 
-    def test_get_grid_alt(self):
-        # Test 2D grid
+    def test_get_grid_alt_returns_correct_height_2d(self):
+        """Test if the correct height is returned in case of a 2D grid"""
         alt = self.grid.get_grid_alt(2000)
         self.assertEqual(alt, 0)
 
-        # Test 3D grid
+    def test_get_grid_alt_returns_correct_height_3d_at_lower_boundary(self):
+        """Test if the correct height is returned in case of a 3D grid at lower boundary"""
         self.grid.z['data'] = np.array([0, 1000])
         self.grid.grid_size[0] = 1000
-        alt = self.grid.get_grid_alt(400)
-        max_alt = self.grid.get_grid_alt(1500)
+        alt = self.grid.get_grid_alt(400)  # 400 closer to 0, than to 1000
         self.assertEqual(alt, 0)
-        self.assertEqual(max_alt, 1)
 
-    def make_2D_grid(self):
-        time = int(dt.datetime.timestamp(self.time))
-        x = {'data': np.arange(0, 2001, 1000)}
-        y = {'data': np.arange(0, 2001, 1000)}
-        z = {'data': np.array([0])}
-        lon = np.array([[10, 10.5, 11], [10, 10.5, 11], [10, 10.5, 11]])
-        lat = np.array([[48, 48, 48], [49, 49, 49], [50, 50, 50]])
-        time = {'data': [np.array(time)], 'units': 'seconds since 1970-01-01'}
-        fields = {'reflectivity': {'data': self.data_masked}}
-        grid = PyArtGrid(time, fields, x, y, z, lon, lat)
-        return grid
+    def test_get_grid_alt_returns_correct_height_3d_at_upper_boundary(self):
+        """Test if the correct height is returned in case of a 3D grid at upper boundary"""
+        self.grid.z['data'] = np.array([0, 1000])
+        self.grid.grid_size[0] = 1000
+        alt = self.grid.get_grid_alt(1500)  # 1500 above upper boundary --> closer to 1000 than 0
+        self.assertEqual(alt, 1)
 
     @staticmethod
-    def make_data():
+    def _make_data():
         data = np.array([[11, 12, 13], [23, 24, 25], [36, 37, 38]])
         data_masked = np.ma.masked_array([data])
         return data, data_masked
